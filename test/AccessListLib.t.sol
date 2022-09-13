@@ -2,7 +2,7 @@
 pragma solidity ^0.8.16;
 
 import "forge-std/Test.sol";
-import {SLOT_ZERO, UINT_SLOT_ZERO, AccessListLib as al} from "../src/AccessListLib.sol";
+import {SLOT_ZERO, AccessListLib as al} from "../src/AccessListLib.sol";
 import "forge-std/console.sol";
 
 interface IERC20 {
@@ -41,8 +41,22 @@ contract AccessListLibTest is Test {
     bytes32[] public scratch;
 
 
-    function setUp() public {
+    function toSlots(uint256 n, uint256 start, uint256 finish) internal returns (bytes32[] memory) {
+        // This is a helper used to convert a uint into a list of slots that should be made warm in to for testing
+        // NOTE: this leaves scratch dirty
+        uint length = finish - start;
+        uint idx;
+        while (n > 0) {
+            uint a = n % 2;
+            if (a > 0) {
+                scratch.push((length - idx - 1 + start).slot());
+            }
+            n = (n - a) >> 1;
+            idx ++;
+        }
+        return scratch;
     }
+
 
     function testWarm() public {
         assertFalse(SLOT_ZERO.isWarm());
@@ -217,21 +231,5 @@ contract AccessListLibTest is Test {
             transfer(to, amount);
         }
     }
-
-    function toSlots(uint256 n, uint256 start, uint256 finish) internal returns (bytes32[] memory) {
-        // NOTE: this leaves scratch dirty
-        uint length = finish - start;
-        uint idx;
-        while (n > 0) {
-            uint a = n % 2;
-            if (a > 0) {
-                scratch.push((length - idx - 1 + start).slot());
-            }
-            n = (n - a) >> 1;
-            idx ++;
-        }
-        return scratch;
-    }
-
 
 }
